@@ -29,7 +29,7 @@ function RepoUrlForm({ isSubmitting }: { isSubmitting: boolean }) {
              <input type="hidden" name="step" value="listFiles" />
             <div className="space-y-2">
                 <Label htmlFor="repoUrl">GitHub Repository URL</Label>
-                <Input id="repoUrl" name="repoUrl" placeholder="https://github.com/example/repo" required disabled={isSubmitting} />
+                <Input id="repoUrl" name="repoUrl" defaultValue="https://github.com/shubhamjha16/github_agent" required disabled={isSubmitting} />
             </div>
             <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
                 {isSubmitting ? (

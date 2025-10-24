@@ -25,7 +25,7 @@ function AgentForm({ isSubmitting }: { isSubmitting: boolean }) {
           <Input
             id="repoUrl"
             name="repoUrl"
-            placeholder="https://github.com/example/repo"
+            defaultValue="https://github.com/shubhamjha16/github_agent"
             required
             disabled={isSubmitting}
           />
