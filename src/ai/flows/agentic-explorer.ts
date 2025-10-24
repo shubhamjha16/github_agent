@@ -61,6 +61,6 @@ export const exploreAndExplainRepo = ai.defineFlow(
       model: 'googleai/gemini-2.5-flash',
     });
 
-    return llmResponse.output()!;
+    return llmResponse.output;
   }
 );
