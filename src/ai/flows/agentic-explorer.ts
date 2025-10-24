@@ -50,9 +50,9 @@ export const exploreAndExplainRepo = ai.defineFlow(
       
       Do not guess. Use the tools to gather the information you need before formulating your answer.
       
-      Based on the file contents, provide a comprehensive, markdown-formatted answer to the user's question. Also, list the files you inspected.
+      Based on the file contents, provide a comprehensive, markdown-formatted answer to the user's question.
       
-      IMPORTANT: Your final output must be a JSON object that strictly follows the provided output schema.
+      IMPORTANT: Your final output must be a JSON object that strictly follows the provided output schema. Pay close attention to the property names, like 'filesInspected'.
 
       Repository URL: ${repoUrl}
       Question: ${question}`,
