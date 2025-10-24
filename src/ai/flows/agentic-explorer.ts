@@ -6,7 +6,7 @@
  */
 
 import { ai } from '@/ai/genkit';
-import { z } from 'genkit';
+import { z } from 'zod';
 import { listRepoFiles, getFileContent } from './explore-repo'; // Reuse existing tools
 
 // Schema for the agentic flow input
@@ -52,6 +52,8 @@ export const exploreAndExplainRepo = ai.defineFlow(
       
       Based on the file contents, provide a comprehensive, markdown-formatted answer to the user's question. Also, list the files you inspected.
       
+      IMPORTANT: Your final output must be a JSON object that strictly follows the provided output schema.
+
       Repository URL: ${repoUrl}
       Question: ${question}`,
       
