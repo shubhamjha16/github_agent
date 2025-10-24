@@ -1,15 +1,34 @@
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { CommandGenerator } from '@/components/github-agent/CommandGenerator';
-import { Github } from 'lucide-react';
+import { Github, BookCopy, Terminal } from 'lucide-react';
+import Link from 'next/link';
 
 export default function Home() {
   return (
     <div className="flex min-h-screen w-full flex-col">
       <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
-        <h1 className="flex items-center gap-2 text-xl font-semibold">
-          <Github className="h-6 w-6" />
-          <span className="font-headline">GitHub Agent</span>
-        </h1>
+        <div className="flex items-center gap-4">
+          <h1 className="flex items-center gap-2 text-xl font-semibold">
+            <Github className="h-6 w-6" />
+            <span className="font-headline">GitHub Agent</span>
+          </h1>
+          <nav className="hidden md:flex items-center gap-4 text-sm font-medium">
+            <Link
+              href="/"
+              className="flex items-center gap-1 text-foreground font-semibold"
+            >
+              <Terminal className="h-4 w-4" />
+              Command Generator
+            </Link>
+            <Link
+                href="/explain"
+                className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <BookCopy className="h-4 w-4" />
+                Code Explainer
+              </Link>
+          </nav>
+        </div>
         <AuthWidget />
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
