@@ -1,5 +1,5 @@
 'use client';
-import { useActionState } from 'react';
+import { useActionState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,6 @@ import { ArrowRight, LoaderCircle, Github, GitBranch, Terminal, FileCode, Presen
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
-import { useUser } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { handleRepoUrlSubmission, handleFileSelectionSubmission, type RepoExplorerState } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -107,9 +106,8 @@ export default function ExplorePage() {
   const [state2, formAction2] = useActionState(handleFileSelectionSubmission, state);
 
   const { pending } = useFormStatus();
-  const { user, isUserLoading } = useUser();
-
-  const isFormDisabled = pending || isUserLoading || !user;
+  
+  const isFormDisabled = pending;
 
   const currentState = state.step === 'initial' ? state : state2;
 
@@ -148,13 +146,6 @@ export default function ExplorePage() {
                     Enter a GitHub repository URL to list its files, then select a file to get an AI-powered explanation.
                 </p>
             </div>
-
-            {!user && !isUserLoading && (
-                <Alert variant="destructive">
-                    <AlertTitle>Login Required</AlertTitle>
-                    <AlertDescription>Please log in with GitHub to use the repository explorer.</AlertDescription>
-                </Alert>
-            )}
 
             <Card className="shadow-lg">
                 <CardContent className="p-6">
