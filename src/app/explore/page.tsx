@@ -1,6 +1,5 @@
-
 'use client';
-import { useActionState, useTransition } from 'react';
+import { useActionState, useEffect } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,57 +8,46 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { handleRepoUrlSubmission, handleFileSelectionSubmission, type RepoExplorerState } from './actions';
+import { handleRepoExplorerAction, type RepoExplorerState, initialState } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
-const initialState: RepoExplorerState = {
-    step: 'initial',
-    repoUrl: null,
-    files: null,
-    explanationResult: null,
-    error: null,
-};
-
-function SubmitButton({ children }: { children: React.ReactNode }) {
+function RepoUrlForm() {
     const { pending } = useFormStatus();
     return (
-        <Button type="submit" disabled={pending} className="w-full sm:w-auto">
-        {pending ? (
-            <>
-            <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
-            Please wait...
-            </>
-        ) : (
-            <>
-            {children}
-            <ArrowRight className="ml-2 h-4 w-4" />
-            </>
-        )}
-        </Button>
-    );
-}
-
-function RepoUrlForm({ formAction, isFormDisabled }: { formAction: (payload: FormData) => void, isFormDisabled: boolean }) {
-    return (
-        <form action={formAction} className="space-y-4">
+        <div className="space-y-4">
+             <input type="hidden" name="step" value="listFiles" />
             <div className="space-y-2">
                 <Label htmlFor="repoUrl">GitHub Repository URL</Label>
-                <Input id="repoUrl" name="repoUrl" placeholder="https://github.com/example/repo" required disabled={isFormDisabled} />
+                <Input id="repoUrl" name="repoUrl" placeholder="https://github.com/example/repo" required disabled={pending} />
             </div>
-            <SubmitButton>List Files</SubmitButton>
-        </form>
+            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+                {pending ? (
+                    <>
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    Listing Files...
+                    </>
+                ) : (
+                    <>
+                    List Files
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                )}
+            </Button>
+        </div>
     );
 }
 
-function FileSelectForm({ formAction, isFormDisabled, files, repoUrl }: { formAction: (payload: FormData) => void, isFormDisabled: boolean, files: string[], repoUrl: string }) {
+function FileSelectForm({ files, repoUrl }: { files: string[], repoUrl: string }) {
+    const { pending } = useFormStatus();
     return (
-        <form action={formAction} className="space-y-4">
+        <div className="space-y-4">
+            <input type="hidden" name="step" value="explainFile" />
             <input type="hidden" name="repoUrl" value={repoUrl} />
             <div className="space-y-2">
                 <Label htmlFor="filePath">Select a file to explain</Label>
-                <Select name="filePath" required disabled={isFormDisabled}>
+                <Select name="filePath" required disabled={pending}>
                     <SelectTrigger>
                         <SelectValue placeholder="Click to select a file..." />
                     </SelectTrigger>
@@ -70,8 +58,20 @@ function FileSelectForm({ formAction, isFormDisabled, files, repoUrl }: { formAc
                     </SelectContent>
                 </Select>
             </div>
-            <SubmitButton>Explain File</SubmitButton>
-        </form>
+            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+                 {pending ? (
+                    <>
+                    <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
+                    Explaining...
+                    </>
+                ) : (
+                    <>
+                    Explain File
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                    </>
+                )}
+            </Button>
+        </div>
     );
 }
 
@@ -83,11 +83,11 @@ function FileListDisplay({ files, repoUrl }: { files: string[], repoUrl: string 
                     <GitBranch className="h-5 w-5"/> Files in {new URL(repoUrl).pathname}
                 </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-2">
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm">
                 {files.map(file => (
-                    <div key={file} className="flex items-center gap-2 text-sm p-2 bg-muted/50 rounded-md">
-                        <FileCode className="h-4 w-4 text-muted-foreground" />
-                        <span>{file}</span>
+                    <div key={file} className="flex items-center gap-2 p-2 bg-muted/50 rounded-md truncate">
+                        <FileCode className="h-4 w-4 text-muted-foreground flex-shrink-0" />
+                        <span className="truncate" title={file}>{file}</span>
                     </div>
                 ))}
             </CardContent>
@@ -122,15 +122,22 @@ function ExplanationResult({ data }: { data: RepoExplorerState['explanationResul
     )
 }
 
+function LoadingSkeleton() {
+    return (
+        <Card>
+            <CardContent className="p-6">
+                <div className="space-y-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-32" />
+                </div>
+            </CardContent>
+        </Card>
+    )
+}
+
 export default function ExplorePage() {
-  const [state, formAction] = useActionState(handleRepoUrlSubmission, initialState);
-  const [state2, formAction2] = useActionState(handleFileSelectionSubmission, state);
-
+  const [state, formAction] = useActionState(handleRepoExplorerAction, initialState);
   const { pending } = useFormStatus();
-  
-  const isFormDisabled = pending;
-
-  const currentState = state.step === 'initial' ? state : state2;
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -168,73 +175,41 @@ export default function ExplorePage() {
                 </p>
             </div>
 
-            {currentState.step === 'initial' && (
-                <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                        <RepoUrlForm formAction={formAction} isFormDisabled={isFormDisabled} />
-                    </CardContent>
-                </Card>
-            )}
-
-            {currentState.step === 'files_listed' && currentState.files && currentState.repoUrl && (
-                <>
-                    <FileListDisplay files={currentState.files} repoUrl={currentState.repoUrl} />
+            <form action={formAction}>
+                 {state.step === 'initial' && (
                     <Card className="shadow-lg">
                         <CardContent className="p-6">
-                            <FileSelectForm formAction={formAction2} isFormDisabled={isFormDisabled} files={currentState.files} repoUrl={currentState.repoUrl} />
+                           <RepoUrlForm />
                         </CardContent>
                     </Card>
-                </>
-            )}
-            
-            {currentState.step === 'explanation_generated' && currentState.files && currentState.repoUrl && (
-                 <>
-                    <FileListDisplay files={currentState.files} repoUrl={currentState.repoUrl} />
-                    <Card className="shadow-lg">
-                        <CardContent className="p-6">
-                            <FileSelectForm formAction={formAction2} isFormDisabled={isFormDisabled} files={currentState.files} repoUrl={currentState.repoUrl} />
-                        </CardContent>
-                    </Card>
-                </>
-            )}
+                )}
 
+                {(state.step === 'files_listed' || state.step === 'explanation_generated') && state.files && state.repoUrl && (
+                    <div className="space-y-6">
+                        <FileListDisplay files={state.files} repoUrl={state.repoUrl} />
+                        <Card className="shadow-lg">
+                            <CardContent className="p-6">
+                                <FileSelectForm files={state.files} repoUrl={state.repoUrl} />
+                            </CardContent>
+                        </Card>
+                    </div>
+                )}
+            </form>
 
-            {currentState.error && (
-                <Alert variant="destructive">
+            {state.error && (
+                <Alert variant="destructive" className="mt-4">
                     <AlertTitle>Error</AlertTitle>
-                    <AlertDescription>{currentState.error}</AlertDescription>
+                    <AlertDescription>{state.error}</AlertDescription>
                 </Alert>
             )}
 
-            {pending && currentState.step === 'initial' && (
-                 <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                        <div className="space-y-4">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-32" />
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
+            {pending && <LoadingSkeleton />}
 
-            {pending && currentState.step !== 'initial' && (
-                 <Card className="shadow-lg">
-                    <CardContent className="p-6">
-                        <div className="space-y-4">
-                            <Skeleton className="h-10 w-full" />
-                            <Skeleton className="h-10 w-32" />
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {currentState.step === 'explanation_generated' && (
-                <ExplanationResult data={currentState.explanationResult} />
+            {state.step === 'explanation_generated' && (
+                <ExplanationResult data={state.explanationResult} />
             )}
         </div>
       </main>
     </div>
   );
 }
-
-    

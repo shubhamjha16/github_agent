@@ -3,14 +3,8 @@
 import { listRepoFiles, explainRepoFile, type ExplainRepoFileOutput } from '@/ai/flows/explore-repo';
 import { z } from 'zod';
 
-const listFilesSchema = z.object({
-  repoUrl: z.string().url({ message: 'Please enter a valid GitHub repository URL.' }),
-});
-
-const explainFileSchema = z.object({
-    repoUrl: z.string().url(),
-    filePath: z.string().min(1, { message: 'Please select a file to explain.'})
-});
+const repoUrlSchema = z.string().url({ message: 'Please enter a valid GitHub repository URL.' });
+const filePathSchema = z.string().min(1, { message: 'Please select a file to explain.' });
 
 // State for the multi-step form
 export type RepoExplorerState = {
@@ -19,83 +13,89 @@ export type RepoExplorerState = {
   files: string[] | null;
   explanationResult: ExplainRepoFileOutput | null;
   error: string | null;
+  isSubmittingFiles: boolean;
+  isSubmittingFileSelection: boolean;
 };
 
-export async function handleRepoUrlSubmission(
+export const initialState: RepoExplorerState = {
+    step: 'initial',
+    repoUrl: null,
+    files: null,
+    explanationResult: null,
+    error: null,
+    isSubmittingFiles: false,
+    isSubmittingFileSelection: false
+};
+
+
+export async function handleRepoExplorerAction(
   prevState: RepoExplorerState,
   formData: FormData
 ): Promise<RepoExplorerState> {
+    const formStep = formData.get('step');
+    const repoUrl = formData.get('repoUrl') as string;
 
-  const validatedFields = listFilesSchema.safeParse({
-    repoUrl: formData.get('repoUrl'),
-  });
+    if (formStep === 'listFiles') {
+        const validatedRepoUrl = repoUrlSchema.safeParse(repoUrl);
 
-  const initialState: RepoExplorerState = {
-      step: 'initial',
-      repoUrl: null,
-      files: null,
-      explanationResult: null,
-      error: null,
-  };
+        if (!validatedRepoUrl.success) {
+            return {
+                ...initialState,
+                error: validatedRepoUrl.error.errors.map((e) => e.message).join(', '),
+            };
+        }
 
-  if (!validatedFields.success) {
-    return {
-      ...initialState,
-      error: validatedFields.error.errors.map((e) => e.message).join(', '),
-    };
-  }
+        try {
+            const { files } = await listRepoFiles({ repoUrl: validatedRepoUrl.data });
+            return {
+                ...initialState,
+                step: 'files_listed',
+                repoUrl: validatedRepoUrl.data,
+                files: files,
+            };
+        } catch (e: any) {
+            console.error(e);
+            return {
+                ...initialState,
+                error: e.message || 'An unexpected error occurred while listing files.',
+            };
+        }
 
-  try {
-    const { files } = await listRepoFiles(validatedFields.data);
-    return {
-      ...initialState,
-      step: 'files_listed',
-      repoUrl: validatedFields.data.repoUrl,
-      files: files,
-    };
-  } catch (e: any) {
-    console.error(e);
-    return {
-      ...initialState,
-      error: e.message || 'An unexpected error occurred while listing files.',
-    };
-  }
+    } else if (formStep === 'explainFile') {
+        const filePath = formData.get('filePath') as string;
+
+        const validatedRepoUrl = repoUrlSchema.safeParse(repoUrl);
+        const validatedFilePath = filePathSchema.safeParse(filePath);
+
+        if (!validatedRepoUrl.success || !validatedFilePath.success) {
+            const urlErrors = validatedRepoUrl.success ? [] : validatedRepoUrl.error.errors;
+            const fileErrors = validatedFilePath.success ? [] : validatedFilePath.error.errors;
+            return {
+                ...prevState, // Keep previous state like file list
+                step: 'files_listed',
+                explanationResult: null,
+                error: [...urlErrors, ...fileErrors].map((e) => e.message).join(', '),
+            };
+        }
+
+        try {
+            const result = await explainRepoFile({ repoUrl, filePath });
+            return {
+              ...prevState,
+              step: 'explanation_generated',
+              explanationResult: result,
+              error: null,
+            };
+          } catch (e: any) {
+            console.error(e);
+            return {
+              ...prevState,
+              step: 'files_listed',
+              explanationResult: null,
+              error: e.message || 'An unexpected error occurred while explaining the file.',
+            };
+          }
+    }
+
+    return initialState;
 }
-
-export async function handleFileSelectionSubmission(
-    prevState: RepoExplorerState,
-    formData: FormData
-  ): Promise<RepoExplorerState> {
-
-    const validatedFields = explainFileSchema.safeParse({
-      repoUrl: formData.get('repoUrl'),
-      filePath: formData.get('filePath'),
-    });
-
-    if (!validatedFields.success) {
-      return {
-        ...prevState, // Keep previous state like file list
-        step: 'files_listed',
-        explanationResult: null,
-        error: validatedFields.error.errors.map((e) => e.message).join(', '),
-      };
-    }
-
-    try {
-      const result = await explainRepoFile(validatedFields.data);
-      return {
-        ...prevState,
-        step: 'explanation_generated',
-        explanationResult: result,
-        error: null,
-      };
-    } catch (e: any) {
-      console.error(e);
-      return {
-        ...prevState,
-        step: 'files_listed',
-        explanationResult: null,
-        error: e.message || 'An unexpected error occurred while explaining the file.',
-      };
-    }
-  }
