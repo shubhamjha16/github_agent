@@ -1,13 +1,13 @@
 'use client';
 
-import { useFormState, useFormStatus } from 'react-dom';
+import { useActionState, useEffect, useRef } from 'react';
+import { useFormStatus } from 'react-dom';
 import { handlePromptSubmission, type FormState } from '@/app/actions';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ArrowRight, LoaderCircle } from 'lucide-react';
 import { CommandList } from './CommandList';
 import { Card, CardContent } from '../ui/card';
-import { useEffect, useRef } from 'react';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
@@ -38,7 +38,7 @@ function SubmitButton() {
 }
 
 export function CommandGenerator() {
-  const [state, formAction] = useFormState(handlePromptSubmission, initialState);
+  const [state, formAction] = useActionState(handlePromptSubmission, initialState);
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const { pending } = useFormStatus();
