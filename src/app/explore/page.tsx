@@ -1,5 +1,5 @@
 'use client';
-import { useActionState, useEffect } from 'react';
+import { useActionState } from 'react';
 import { useFormStatus } from 'react-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,7 +9,6 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { handleRepoExplorerAction, type RepoExplorerState } from './actions';
-import { Skeleton } from '@/components/ui/skeleton';
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
@@ -19,20 +18,19 @@ const initialState: RepoExplorerState = {
     files: null,
     explanationResult: null,
     error: null,
-    isSubmittingFiles: false,
-    isSubmittingFileSelection: false
 };
 
-function RepoUrlForm({ isSubmitting }: { isSubmitting: boolean }) {
+function RepoUrlForm() {
+    const { pending } = useFormStatus();
     return (
         <div className="space-y-4">
              <input type="hidden" name="step" value="listFiles" />
             <div className="space-y-2">
                 <Label htmlFor="repoUrl">GitHub Repository URL</Label>
-                <Input id="repoUrl" name="repoUrl" defaultValue="https://github.com/shubhamjha16/github_agent" required disabled={isSubmitting} />
+                <Input id="repoUrl" name="repoUrl" defaultValue="https://github.com/shubhamjha16/github_agent" required disabled={pending} />
             </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-                {isSubmitting ? (
+            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+                {pending ? (
                     <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                     Listing Files...
@@ -48,14 +46,15 @@ function RepoUrlForm({ isSubmitting }: { isSubmitting: boolean }) {
     );
 }
 
-function FileSelectForm({ files, repoUrl, isSubmitting }: { files: string[], repoUrl: string, isSubmitting: boolean }) {
+function FileSelectForm({ files, repoUrl }: { files: string[], repoUrl: string}) {
+    const { pending } = useFormStatus();
     return (
         <div className="space-y-4">
             <input type="hidden" name="step" value="explainFile" />
             <input type="hidden" name="repoUrl" value={repoUrl} />
             <div className="space-y-2">
                 <Label htmlFor="filePath">Select a file to explain</Label>
-                <Select name="filePath" required disabled={isSubmitting}>
+                <Select name="filePath" required disabled={pending}>
                     <SelectTrigger>
                         <SelectValue placeholder="Click to select a file..." />
                     </SelectTrigger>
@@ -66,8 +65,8 @@ function FileSelectForm({ files, repoUrl, isSubmitting }: { files: string[], rep
                     </SelectContent>
                 </Select>
             </div>
-            <Button type="submit" disabled={isSubmitting} className="w-full sm:w-auto">
-                 {isSubmitting ? (
+            <Button type="submit" disabled={pending} className="w-full sm:w-auto">
+                 {pending ? (
                     <>
                     <LoaderCircle className="mr-2 h-4 w-4 animate-spin" />
                     Explaining...
@@ -88,7 +87,7 @@ function FileListDisplay({ files, repoUrl }: { files: string[], repoUrl: string 
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <GitBranch className="h-5 w-5"/> Files in {new URL(repoUrl).pathname}
+                    <GitBranch className="h-5 w-5"/> Files in {new URL(repoUrl).pathname.substring(1)}
                 </CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 text-sm">
@@ -117,7 +116,7 @@ function ExplanationResult({ data }: { data: RepoExplorerState['explanationResul
                 <CardContent>
                      <div
                         className="prose prose-sm dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: formattedExplanation.replace(/\\n/g, '<br />').replace(/<br \/><br \/>/g, '</p><p>') }}
+                        dangerouslySetInnerHTML={{ __html: formattedExplanation.replace(/\\n/g, '<br />').replace(/(\r\n|\n|\r)/gm,"<br />") }}
                     />
                 </CardContent>
             </Card>
@@ -134,7 +133,7 @@ function ExplanationResult({ data }: { data: RepoExplorerState['explanationResul
 }
 
 
-function LoadingSkeleton({ step }: { step: 'files' | 'explanation' }) {
+function LoadingSkeleton({ message }: { message: string }) {
     return (
         <Card>
             <CardContent className="p-6">
@@ -142,7 +141,7 @@ function LoadingSkeleton({ step }: { step: 'files' | 'explanation' }) {
                     <LoaderCircle className="h-8 w-8 animate-spin text-primary"/>
                     <div className="space-y-1">
                         <p className="font-medium text-lg">
-                           {step === 'files' ? 'Listing repository files...' : 'Analyzing file...'}
+                           {message}
                         </p>
                         <p className="text-muted-foreground text-sm">
                             This may take a moment.
@@ -155,11 +154,7 @@ function LoadingSkeleton({ step }: { step: 'files' | 'explanation' }) {
 }
 
 export default function ExplorePage() {
-  const [state, formAction] = useActionState(handleRepoExplorerAction, initialState);
-  
-  const isSubmittingFiles = state.isSubmittingFiles;
-  const isSubmittingFileSelection = state.isSubmittingFileSelection;
-
+  const [state, formAction, isPending] = useActionState(handleRepoExplorerAction, initialState);
 
   return (
     <div className="flex min-h-screen w-full flex-col">
@@ -208,7 +203,7 @@ export default function ExplorePage() {
                  {state.step === 'initial' && (
                     <Card className="shadow-lg">
                         <CardContent className="p-6">
-                           <RepoUrlForm isSubmitting={isSubmittingFiles} />
+                           <RepoUrlForm />
                         </CardContent>
                     </Card>
                 )}
@@ -218,7 +213,7 @@ export default function ExplorePage() {
                         <FileListDisplay files={state.files} repoUrl={state.repoUrl} />
                         <Card className="shadow-lg">
                             <CardContent className="p-6">
-                                <FileSelectForm files={state.files} repoUrl={state.repoUrl} isSubmitting={isSubmittingFileSelection} />
+                                <FileSelectForm files={state.files} repoUrl={state.repoUrl} />
                             </CardContent>
                         </Card>
                     </div>
@@ -232,11 +227,11 @@ export default function ExplorePage() {
                 </Alert>
             )}
 
-            {isSubmittingFiles && <LoadingSkeleton step="files" />}
-            {isSubmittingFileSelection && <LoadingSkeleton step="explanation" />}
+            {isPending && state.step === 'initial' && <LoadingSkeleton message="Listing repository files..." />}
+            {isPending && (state.step === 'files_listed' || state.step === 'explanation_generated') && <LoadingSkeleton message="Analyzing file..." />}
 
 
-            {state.step === 'explanation_generated' && (
+            {state.step === 'explanation_generated' && !isPending && (
                 <ExplanationResult data={state.explanationResult} />
             )}
         </div>

@@ -13,8 +13,14 @@ export type RepoExplorerState = {
   files: string[] | null;
   explanationResult: ExplainRepoFileOutput | null;
   error: string | null;
-  isSubmittingFiles: boolean;
-  isSubmittingFileSelection: boolean;
+};
+
+const initialState: RepoExplorerState = {
+    step: 'initial',
+    repoUrl: null,
+    files: null,
+    explanationResult: null,
+    error: null,
 };
 
 export async function handleRepoExplorerAction(
@@ -29,13 +35,8 @@ export async function handleRepoExplorerAction(
 
         if (!validatedRepoUrl.success) {
             return {
-                step: 'initial',
-                repoUrl: null,
-                files: null,
-                explanationResult: null,
+                ...initialState,
                 error: validatedRepoUrl.error.errors.map((e) => e.message).join(', '),
-                isSubmittingFiles: false,
-                isSubmittingFileSelection: false,
             };
         }
 
@@ -47,19 +48,12 @@ export async function handleRepoExplorerAction(
                 files: files,
                 explanationResult: null,
                 error: null,
-                isSubmittingFiles: false,
-                isSubmittingFileSelection: false,
             };
         } catch (e: any) {
             console.error(e);
             return {
-                step: 'initial',
-                repoUrl: null,
-                files: null,
-                explanationResult: null,
+                ...initialState,
                 error: e.message || 'An unexpected error occurred while listing files.',
-                isSubmittingFiles: false,
-                isSubmittingFileSelection: false,
             };
         }
 
@@ -101,12 +95,7 @@ export async function handleRepoExplorerAction(
 
     // Reset to initial state if action is unknown
     return {
-        step: 'initial',
-        repoUrl: null,
-        files: null,
-        explanationResult: null,
+        ...initialState,
         error: "Unknown action.",
-        isSubmittingFiles: false,
-        isSubmittingFileSelection: false,
     };
 }
