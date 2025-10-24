@@ -14,13 +14,12 @@ import { AuthWidget } from '@/components/github-agent/AuthWidget';
 const initialState: AgenticExplorerState = {
   result: null,
   error: null,
-  isSubmitting: false,
 };
 
 function AgentForm({ isSubmitting }: { isSubmitting: boolean }) {
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 gap-4">
         <div className="space-y-2">
           <Label htmlFor="repoUrl">GitHub Repository URL</Label>
           <Input
@@ -33,12 +32,13 @@ function AgentForm({ isSubmitting }: { isSubmitting: boolean }) {
         </div>
         <div className="space-y-2">
           <Label htmlFor="question">Your Question</Label>
-          <Input
+          <Textarea
             id="question"
             name="question"
-            placeholder="e.g., What is the purpose of this app?"
+            placeholder="e.g., What is the purpose of this app? How does authentication work?"
             required
             disabled={isSubmitting}
+            className="min-h-[100px]"
           />
         </div>
       </div>
@@ -126,8 +126,7 @@ function LoadingSkeleton() {
 }
 
 export default function AgenticExplorerPage() {
-  const [state, formAction] = useActionState(handleAgenticExplorerAction, initialState);
-  const isSubmitting = state.isSubmitting;
+  const [state, formAction, isSubmitting] = useActionState(handleAgenticExplorerAction, initialState);
 
   return (
     <div className="flex min-h-screen w-full flex-col">

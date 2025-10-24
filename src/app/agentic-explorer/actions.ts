@@ -17,7 +17,6 @@ const AgenticExplorerSchema = z.object({
 export type AgenticExplorerState = {
   result: AgenticExplorerOutput | null;
   error: string | null;
-  isSubmitting: boolean;
 };
 
 export async function handleAgenticExplorerAction(
@@ -33,7 +32,6 @@ export async function handleAgenticExplorerAction(
     return {
       result: null,
       error: validation.error.errors.map((e) => e.message).join(', '),
-      isSubmitting: false,
     };
   }
 
@@ -42,13 +40,12 @@ export async function handleAgenticExplorerAction(
       repoUrl: validation.data.repoUrl,
       question: validation.data.question,
     });
-    return { result, error: null, isSubmitting: false };
+    return { result, error: null };
   } catch (e: any) {
     console.error(e);
     return {
       result: null,
       error: e.message || 'An unexpected error occurred.',
-      isSubmitting: false,
     };
   }
 }
