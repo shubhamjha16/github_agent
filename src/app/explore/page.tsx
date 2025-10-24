@@ -1,3 +1,4 @@
+
 'use client';
 import { useActionState, useTransition } from 'react';
 import { useFormStatus } from 'react-dom';
@@ -74,6 +75,26 @@ function FileSelectForm({ formAction, isFormDisabled, files, repoUrl }: { formAc
     );
 }
 
+function FileListDisplay({ files, repoUrl }: { files: string[], repoUrl: string }) {
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                    <GitBranch className="h-5 w-5"/> Files in {new URL(repoUrl).pathname}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+                {files.map(file => (
+                    <div key={file} className="flex items-center gap-2 text-sm p-2 bg-muted/50 rounded-md">
+                        <FileCode className="h-4 w-4 text-muted-foreground" />
+                        <span>{file}</span>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    )
+}
+
 function ExplanationResult({ data }: { data: RepoExplorerState['explanationResult'] }) {
     if (!data) return null;
     return (
@@ -147,20 +168,36 @@ export default function ExplorePage() {
                 </p>
             </div>
 
-            <Card className="shadow-lg">
-                <CardContent className="p-6">
-                    {currentState.step === 'initial' && <RepoUrlForm formAction={formAction} isFormDisabled={isFormDisabled} />}
-                    
-                    {currentState.step === 'files_listed' && currentState.files && currentState.repoUrl && (
-                        <FileSelectForm formAction={formAction2} isFormDisabled={isFormDisabled} files={currentState.files} repoUrl={currentState.repoUrl} />
-                    )}
+            {currentState.step === 'initial' && (
+                <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                        <RepoUrlForm formAction={formAction} isFormDisabled={isFormDisabled} />
+                    </CardContent>
+                </Card>
+            )}
 
-                    {currentState.step === 'explanation_generated' && currentState.files && currentState.repoUrl && (
-                         <FileSelectForm formAction={formAction2} isFormDisabled={isFormDisabled} files={currentState.files} repoUrl={currentState.repoUrl} />
-                    )}
+            {currentState.step === 'files_listed' && currentState.files && currentState.repoUrl && (
+                <>
+                    <FileListDisplay files={currentState.files} repoUrl={currentState.repoUrl} />
+                    <Card className="shadow-lg">
+                        <CardContent className="p-6">
+                            <FileSelectForm formAction={formAction2} isFormDisabled={isFormDisabled} files={currentState.files} repoUrl={currentState.repoUrl} />
+                        </CardContent>
+                    </Card>
+                </>
+            )}
+            
+            {currentState.step === 'explanation_generated' && currentState.files && currentState.repoUrl && (
+                 <>
+                    <FileListDisplay files={currentState.files} repoUrl={currentState.repoUrl} />
+                    <Card className="shadow-lg">
+                        <CardContent className="p-6">
+                            <FileSelectForm formAction={formAction2} isFormDisabled={isFormDisabled} files={currentState.files} repoUrl={currentState.repoUrl} />
+                        </CardContent>
+                    </Card>
+                </>
+            )}
 
-                </CardContent>
-            </Card>
 
             {currentState.error && (
                 <Alert variant="destructive">
@@ -169,11 +206,26 @@ export default function ExplorePage() {
                 </Alert>
             )}
 
+            {pending && currentState.step === 'initial' && (
+                 <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                        <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-32" />
+                        </div>
+                    </CardContent>
+                </Card>
+            )}
+
             {pending && currentState.step !== 'initial' && (
-                <div className="space-y-4">
-                    <Skeleton className="h-10 w-full" />
-                    <Skeleton className="h-20 w-full" />
-                </div>
+                 <Card className="shadow-lg">
+                    <CardContent className="p-6">
+                        <div className="space-y-4">
+                            <Skeleton className="h-10 w-full" />
+                            <Skeleton className="h-10 w-32" />
+                        </div>
+                    </CardContent>
+                </Card>
             )}
 
             {currentState.step === 'explanation_generated' && (
@@ -184,3 +236,5 @@ export default function ExplorePage() {
     </div>
   );
 }
+
+    
