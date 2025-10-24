@@ -10,6 +10,24 @@
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
+// Helper function to parse GitHub URL
+function parseRepoUrl(repoUrl: string): { owner: string; repo: string } {
+  try {
+    const url = new URL(repoUrl);
+    if (url.hostname !== 'github.com') {
+      throw new Error('Invalid GitHub URL');
+    }
+    const pathParts = url.pathname.split('/').filter(Boolean);
+    if (pathParts.length < 2) {
+      throw new Error('Invalid GitHub repository path');
+    }
+    const [owner, repo] = pathParts;
+    return { owner, repo };
+  } catch (error) {
+    throw new Error('Could not parse repository URL.');
+  }
+}
+
 // Schemas for Tools
 const RepoUrlInputSchema = z.object({
   repoUrl: z.string().url().describe('The URL of the GitHub repository.'),
@@ -24,27 +42,48 @@ const FileContentInputSchema = z.object({
 export const listRepoFiles = ai.defineTool(
   {
     name: 'listRepoFiles',
-    description: 'Lists the file paths in a given GitHub repository.',
+    description: 'Lists the file paths in a given public GitHub repository.',
     inputSchema: RepoUrlInputSchema,
     outputSchema: z.object({
       files: z.array(z.string()),
     }),
   },
   async ({ repoUrl }) => {
-    console.log(`Simulating listing files for repo: ${repoUrl}`);
-    // In a real app, this would use the GitHub API to list files.
-    // We'll return a sample structure for this agent app.
-    return {
-      files: [
-        'src/app/page.tsx',
-        'src/app/layout.tsx',
-        'src/components/github-agent/CommandGenerator.tsx',
-        'src/components/github-agent/AuthWidget.tsx',
-        'src/ai/flows/generate-git-commands-from-prompt.ts',
-        'package.json',
-        'tailwind.config.ts',
-      ],
-    };
+    try {
+      const { owner, repo } = parseRepoUrl(repoUrl);
+      // This API endpoint gets the tree recursively. We'll try 'main' first, then 'master'.
+      let branch = 'main';
+      let apiUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+
+      let response = await fetch(apiUrl);
+
+      if (!response.ok) {
+        // If 'main' fails, try 'master' as a fallback
+        branch = 'master';
+        apiUrl = `https://api.github.com/repos/${owner}/${repo}/git/trees/${branch}?recursive=1`;
+        response = await fetch(apiUrl);
+
+        if (!response.ok) {
+          throw new Error(`Failed to fetch repository tree. Status: ${response.status}. URL: ${apiUrl}`);
+        }
+      }
+
+      const data = await response.json();
+      
+      if (!data.tree) {
+        throw new Error('Invalid API response: "tree" field is missing.');
+      }
+
+      const files = data.tree
+        .filter((item: any) => item.type === 'blob') // 'blob' means file, 'tree' means directory
+        .map((item: any) => item.path);
+
+      return { files };
+    } catch (e: any) {
+        console.error("Error in listRepoFiles:", e);
+        // Re-throw a more user-friendly error for the AI to handle
+        throw new Error(`Could not list files for the repository ${repoUrl}. Reason: ${e.message}`);
+    }
   }
 );
 
@@ -52,18 +91,37 @@ export const listRepoFiles = ai.defineTool(
 export const getFileContent = ai.defineTool(
   {
     name: 'getFileContent',
-    description: "Gets the source code of a specific file from a GitHub repository.",
+    description: "Gets the source code of a specific file from a public GitHub repository.",
     inputSchema: FileContentInputSchema,
     outputSchema: z.object({
       content: z.string(),
     }),
   },
   async ({ repoUrl, filePath }) => {
-    console.log(`Simulating fetching file content for ${filePath} in ${repoUrl}`);
-    // This is a simulation. A real app would fetch from the GitHub API.
-    return {
-      content: `// Simulated content for ${filePath}\n// In a real application, this would be the actual file content.\n\nexport default function SimulatedComponent() {\n  return <div>Hello from ${filePath}!</div>\n}`,
-    };
+     try {
+      const { owner, repo } = parseRepoUrl(repoUrl);
+      
+      // Try 'main' branch first
+      let rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/main/${filePath}`;
+      let response = await fetch(rawUrl);
+
+      if (!response.ok) {
+        // Fallback to 'master' branch
+        rawUrl = `https://raw.githubusercontent.com/${owner}/${repo}/master/${filePath}`;
+        response = await fetch(rawUrl);
+        
+        if (!response.ok) {
+            throw new Error(`Failed to fetch file content. Status: ${response.status}. URL: ${rawUrl}`);
+        }
+      }
+      
+      const content = await response.text();
+      return { content };
+
+    } catch (e: any) {
+        console.error(`Error fetching file content for ${filePath}:`, e);
+        throw new Error(`Could not read the file ${filePath}. Reason: ${e.message}`);
+    }
   }
 );
 
