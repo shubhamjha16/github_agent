@@ -11,6 +11,7 @@ import { useUser } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { handleExplainSubmission, type ExplainFormState } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
+import { AuthWidget } from '@/components/github-agent/AuthWidget';
 
 const initialState: ExplainFormState = {
     data: null,
@@ -126,7 +127,7 @@ export default function ExplainPage() {
               </Link>
           </nav>
         </div>
-        {/* We would put the AuthWidget here, but it's a client component and this is a server component */}
+        <AuthWidget />
       </header>
       <main className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-10">
         <div className="mx-auto grid w-full max-w-6xl gap-6">
