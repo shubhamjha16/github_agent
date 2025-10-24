@@ -50,7 +50,7 @@ export default function Home() {
         </div>
       </main>
       <footer className="flex items-center justify-center p-4 border-t">
-        <p className="text-sm text-muted-foreground">Built with Next.js and Genkit.</p>
+        <p className="text-sm text-muted-foreground">built by Shubham Jha, Vansh Pawar, Prashant Mahawar, and Yash Sriwastava</p>
       </footer>
     </div>
   );
