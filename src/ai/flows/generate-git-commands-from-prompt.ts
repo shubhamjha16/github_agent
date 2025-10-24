@@ -12,13 +12,15 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateGitCommandsFromPromptInputSchema = z.object({
-  prompt: z.string().describe('A prompt describing a Git task (e.g., \'commit my changes with message X\').'),
+  prompt: z.string().describe("A prompt describing a Git task (e.g., 'commit my changes with message X')."),
+  execute: z.boolean().describe('Whether to execute the generated commands.'),
 });
 export type GenerateGitCommandsFromPromptInput = z.infer<typeof GenerateGitCommandsFromPromptInputSchema>;
 
 const GenerateGitCommandsFromPromptOutputSchema = z.object({
   commands: z.array(z.string()).describe('An array of Git commands corresponding to the prompt.'),
   explanation: z.string().describe('An explanation of the generated Git commands.'),
+  executionResult: z.string().optional().describe('The result of executing the commands, if requested.'),
 });
 export type GenerateGitCommandsFromPromptOutput = z.infer<typeof GenerateGitCommandsFromPromptOutputSchema>;
 
@@ -26,19 +28,33 @@ export async function generateGitCommandsFromPrompt(input: GenerateGitCommandsFr
   return generateGitCommandsFromPromptFlow(input);
 }
 
+const executeGitCommand = ai.defineTool(
+  {
+    name: 'executeGitCommand',
+    description: 'Executes a Git command. Use this tool for each command that needs to be executed.',
+    inputSchema: z.object({ command: z.string() }),
+    outputSchema: z.object({ success: z.boolean(), message: z.string() }),
+  },
+  async ({ command }) => {
+    // In a real application, you would execute the command here.
+    // For this demo, we'll just simulate it.
+    console.log(`Executing: ${command}`);
+    return { success: true, message: `Successfully executed: ${command}` };
+  }
+);
+
+
 const generateGitCommandsPrompt = ai.definePrompt({
   name: 'generateGitCommandsPrompt',
   input: {schema: GenerateGitCommandsFromPromptInputSchema},
   output: {schema: GenerateGitCommandsFromPromptOutputSchema},
+  tools: [executeGitCommand],
   prompt: `You are a Git command expert. Generate the necessary Git commands to fulfill the user's request. Also provide a brief explanation of what the commands do.
 
-Request: {{{prompt}}}
+If the user asks to execute the command, or if 'execute' is true, use the executeGitCommand tool for each generated command. Combine the results of the tool calls into a single 'executionResult' string.
 
-Output in JSON format:
-{
-  "commands": ["command1", "command2", ...],
-  "explanation": "Explanation of the commands."
-}
+Request: {{{prompt}}}
+Execute: {{{execute}}}
 `,
 });
 

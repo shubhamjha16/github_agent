@@ -17,6 +17,7 @@ export async function handlePromptSubmission(
   formData: FormData
 ): Promise<FormState> {
   const prompt = formData.get('prompt');
+  const execute = formData.get('execute') === 'on';
 
   const validatedPrompt = promptSchema.safeParse(prompt);
 
@@ -29,7 +30,7 @@ export async function handlePromptSubmission(
   }
 
   try {
-    const result = await generateGitCommandsFromPrompt({ prompt: validatedPrompt.data });
+    const result = await generateGitCommandsFromPrompt({ prompt: validatedPrompt.data, execute });
     if (!result.commands || result.commands.length === 0) {
       return {
         data: null,

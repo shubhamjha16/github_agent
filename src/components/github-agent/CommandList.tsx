@@ -2,6 +2,8 @@ import type { GenerateGitCommandsFromPromptOutput } from '@/ai/flows/generate-gi
 import { CommandItem } from './CommandItem';
 import { Skeleton } from '../ui/skeleton';
 import { Separator } from '../ui/separator';
+import { Alert, AlertDescription, AlertTitle } from '../ui/alert';
+import { Terminal } from 'lucide-react';
 
 type CommandListProps = {
   result: GenerateGitCommandsFromPromptOutput | null;
@@ -43,6 +45,18 @@ export function CommandList({ result, isLoading }: CommandListProps) {
 
   return (
     <div className="space-y-6">
+      {result.executionResult && (
+        <>
+        <Alert>
+          <Terminal className="h-4 w-4" />
+          <AlertTitle>Execution Result</AlertTitle>
+          <AlertDescription>
+            <pre className="font-code text-sm whitespace-pre-wrap">{result.executionResult}</pre>
+          </AlertDescription>
+        </Alert>
+        <Separator />
+        </>
+      )}
       <div>
         <h3 className="text-lg font-semibold font-headline">Explanation</h3>
         <p className="text-muted-foreground">{result.explanation}</p>
