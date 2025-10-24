@@ -17,17 +17,6 @@ export type RepoExplorerState = {
   isSubmittingFileSelection: boolean;
 };
 
-export const initialState: RepoExplorerState = {
-    step: 'initial',
-    repoUrl: null,
-    files: null,
-    explanationResult: null,
-    error: null,
-    isSubmittingFiles: false,
-    isSubmittingFileSelection: false
-};
-
-
 export async function handleRepoExplorerAction(
   prevState: RepoExplorerState,
   formData: FormData
@@ -40,24 +29,37 @@ export async function handleRepoExplorerAction(
 
         if (!validatedRepoUrl.success) {
             return {
-                ...initialState,
+                step: 'initial',
+                repoUrl: null,
+                files: null,
+                explanationResult: null,
                 error: validatedRepoUrl.error.errors.map((e) => e.message).join(', '),
+                isSubmittingFiles: false,
+                isSubmittingFileSelection: false,
             };
         }
 
         try {
             const { files } = await listRepoFiles({ repoUrl: validatedRepoUrl.data });
             return {
-                ...initialState,
                 step: 'files_listed',
                 repoUrl: validatedRepoUrl.data,
                 files: files,
+                explanationResult: null,
+                error: null,
+                isSubmittingFiles: false,
+                isSubmittingFileSelection: false,
             };
         } catch (e: any) {
             console.error(e);
             return {
-                ...initialState,
+                step: 'initial',
+                repoUrl: null,
+                files: null,
+                explanationResult: null,
                 error: e.message || 'An unexpected error occurred while listing files.',
+                isSubmittingFiles: false,
+                isSubmittingFileSelection: false,
             };
         }
 
@@ -97,5 +99,14 @@ export async function handleRepoExplorerAction(
           }
     }
 
-    return initialState;
+    // Reset to initial state if action is unknown
+    return {
+        step: 'initial',
+        repoUrl: null,
+        files: null,
+        explanationResult: null,
+        error: "Unknown action.",
+        isSubmittingFiles: false,
+        isSubmittingFileSelection: false,
+    };
 }

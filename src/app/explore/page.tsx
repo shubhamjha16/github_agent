@@ -8,10 +8,20 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { handleRepoExplorerAction, type RepoExplorerState, initialState } from './actions';
+import { handleRepoExplorerAction, type RepoExplorerState } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const initialState: RepoExplorerState = {
+    step: 'initial',
+    repoUrl: null,
+    files: null,
+    explanationResult: null,
+    error: null,
+    isSubmittingFiles: false,
+    isSubmittingFileSelection: false
+};
 
 function RepoUrlForm() {
     const { pending } = useFormStatus();
@@ -97,6 +107,9 @@ function FileListDisplay({ files, repoUrl }: { files: string[], repoUrl: string 
 
 function ExplanationResult({ data }: { data: RepoExplorerState['explanationResult'] }) {
     if (!data) return null;
+    // A simple regex to render markdown-like ```code``` blocks
+    const formattedExplanation = data.explanation.replace(/```([\s\S]*?)```/g, '<pre class="text-sm bg-muted p-4 rounded-lg overflow-x-auto my-4"><code>$1</code></pre>');
+
     return (
         <div className="space-y-8 mt-8">
              <Card>
@@ -106,7 +119,7 @@ function ExplanationResult({ data }: { data: RepoExplorerState['explanationResul
                 <CardContent>
                      <div
                         className="prose prose-sm dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: data.explanation.replace(/\\n/g, '<br />') }}
+                        dangerouslySetInnerHTML={{ __html: formattedExplanation.replace(/\\n/g, '<br />').replace(/<br \/><br \/>/g, '</p><p>') }}
                     />
                 </CardContent>
             </Card>
@@ -121,6 +134,7 @@ function ExplanationResult({ data }: { data: RepoExplorerState['explanationResul
         </div>
     )
 }
+
 
 function LoadingSkeleton() {
     return (
