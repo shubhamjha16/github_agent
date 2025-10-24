@@ -1,6 +1,6 @@
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { CommandGenerator } from '@/components/github-agent/CommandGenerator';
-import { Github, BookCopy, Terminal } from 'lucide-react';
+import { Github, BookCopy, Terminal, GitBranch } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -21,11 +21,11 @@ export default function Home() {
               Command Generator
             </Link>
             <Link
-                href="/explain"
+                href="/explore"
                 className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
               >
-                <BookCopy className="h-4 w-4" />
-                Code Explainer
+                <GitBranch className="h-4 w-4" />
+                Repo Explorer
               </Link>
           </nav>
         </div>
