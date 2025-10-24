@@ -1,6 +1,6 @@
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { CommandGenerator } from '@/components/github-agent/CommandGenerator';
-import { Github, BookCopy, Terminal, GitBranch } from 'lucide-react';
+import { Github, BookCopy, Terminal, GitBranch, Bot } from 'lucide-react';
 import Link from 'next/link';
 
 export default function Home() {
@@ -26,6 +26,13 @@ export default function Home() {
               >
                 <GitBranch className="h-4 w-4" />
                 Repo Explorer
+              </Link>
+            <Link
+                href="/agentic-explorer"
+                className="flex items-center gap-1 text-muted-foreground transition-colors hover:text-foreground"
+              >
+                <Bot className="h-4 w-4" />
+                Agentic Explorer
               </Link>
           </nav>
         </div>
