@@ -102,6 +102,8 @@ export default function ExplainPage() {
   const { pending } = useFormStatus();
   const { user, isUserLoading } = useUser();
 
+  const isFormDisabled = !user || pending || isUserLoading;
+
   return (
     <div className="flex min-h-screen w-full flex-col">
        <header className="sticky top-0 z-10 flex h-16 items-center justify-between gap-4 border-b bg-background/80 backdrop-blur-sm px-4 md:px-6">
@@ -141,20 +143,20 @@ export default function ExplainPage() {
             <Card className="shadow-lg">
                 <CardContent className="p-6">
                     {!user && !isUserLoading && (
-                        <Alert>
+                        <Alert className='mb-4'>
                             <AlertTitle>Please Log In</AlertTitle>
                             <AlertDescription>You need to be logged in to use the Code Explainer.</AlertDescription>
                         </Alert>
                     )}
-                    <form action={formAction} ref={formRef} className="space-y-4 mt-4">
+                    <form action={formAction} ref={formRef} className="space-y-4">
                         <div className="grid sm:grid-cols-2 gap-4">
                             <div className="space-y-2">
                                 <Label htmlFor="repoUrl">Repository URL</Label>
-                                <Input id="repoUrl" name="repoUrl" placeholder="https://github.com/example/repo" required disabled={!user || pending} />
+                                <Input id="repoUrl" name="repoUrl" placeholder="https://github.com/example/repo" required disabled={isFormDisabled} />
                             </div>
                             <div className="space-y-2">
                                 <Label htmlFor="filePath">File Path</Label>
-                                <Input id="filePath" name="filePath" placeholder="src/components/button.tsx" required disabled={!user || pending} />
+                                <Input id="filePath" name="filePath" placeholder="src/components/button.tsx" required disabled={isFormDisabled} />
                             </div>
                         </div>
                         <SubmitButton />
