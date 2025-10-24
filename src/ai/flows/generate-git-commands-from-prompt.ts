@@ -31,15 +31,29 @@ export async function generateGitCommandsFromPrompt(input: GenerateGitCommandsFr
 const executeGitCommand = ai.defineTool(
   {
     name: 'executeGitCommand',
-    description: 'Executes a Git command. Use this tool for each command that needs to be executed.',
+    description: 'Executes a Git command using the GitHub API. Use this for each command that needs to be executed.',
     inputSchema: z.object({ command: z.string() }),
     outputSchema: z.object({ success: z.boolean(), message: z.string() }),
   },
   async ({ command }) => {
-    // In a real application, you would execute the command here.
-    // For this demo, we'll just simulate it.
-    console.log(`Executing: ${command}`);
-    return { success: true, message: `Successfully executed: ${command}` };
+    // In a real application, you would use an OAuth token to make a call
+    // to the GitHub API here to perform the requested git operation.
+    // For this demo, we'll simulate the execution.
+    console.log(`Simulating execution of: ${command}`);
+    if (command.startsWith('git push')) {
+      return { success: true, message: `Simulated: Successfully pushed changes to remote repository.` };
+    }
+    if (command.startsWith('git commit')) {
+      return { success: true, message: `Simulated: Successfully committed changes with message.` };
+    }
+    if (command.startsWith('git add')) {
+        return { success: true, message: `Simulated: Successfully staged changes.` };
+    }
+    // Simulate a failure for an unknown command
+    if (!command.startsWith('git')) {
+        return { success: false, message: `Simulated: Error! '${command}' is not a recognized git command.`}
+    }
+    return { success: true, message: `Simulated: Successfully executed: ${command}` };
   }
 );
 
