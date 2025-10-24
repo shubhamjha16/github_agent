@@ -1,0 +1,113 @@
+/**
+ * @fileoverview Firestore Security Rules for GitHub Agent.
+ *
+ * Core Philosophy: This ruleset enforces a strict user-ownership model, where each user has complete control over their own data and cannot access data belonging to other users.
+ *
+ * Data Structure:
+ * - /users/{userId}: Stores user profile information. Only the user themselves can read or write their own profile. Listing all users is disallowed.
+ * - /users/{userId}/prompts/{promptId}: Stores prompts submitted by each user. Only the owning user can manage their own prompts.
+ * - /users/{userId}/prompts/{promptId}/commands/{commandId}: Stores commands generated for each prompt. Only the owning user can manage commands associated with their prompts.
+ *
+ * Key Security Decisions:
+ * - Strict User Ownership: All data is nested under /users/{userId}, enforcing a clear ownership model.
+ * - No User Listing: Listing all users is explicitly disallowed, preventing unauthorized access to user profiles.
+ * - Denormalization for Authorization: Authorization checks are performed based on the path, eliminating the need for costly `get()` calls.
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    /**
+     * @description Manages user profiles. Only the user themselves can read or write their own profile. Listing all users is disallowed.
+     * @path /users/{userId}
+     * @allow (create) User with ID 'user123' creates their profile.
+     * @deny (create) User with ID 'user123' tries to create a profile with a different ID ('user456').
+     * @allow (get) User with ID 'user123' reads their own profile.
+     * @deny (get) User with ID 'user123' tries to read profile of User with ID 'user456'.
+     * @allow (update) User with ID 'user123' updates their own profile.
+     * @deny (update) User with ID 'user123' tries to update profile of User with ID 'user456'.
+     * @allow (delete) User with ID 'user123' deletes their own profile.
+     * @deny (delete) User with ID 'user123' tries to delete profile of User with ID 'user456'.
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId} {
+      // Helpers
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      // Permissions
+      allow get: if isOwner(userId);
+      allow list: if false;
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages prompts submitted by a specific user. Enforces path-based ownership.
+     * @path /users/{userId}/prompts/{promptId}
+     * @allow (create) User with ID 'user123' creates a prompt under their user ID.
+     * @deny (create) User with ID 'user123' tries to create a prompt under a different user ID ('user456').
+     * @allow (get) User with ID 'user123' reads a prompt under their user ID.
+     * @deny (get) User with ID 'user123' tries to read a prompt under a different user ID ('user456').
+     * @allow (update) User with ID 'user123' updates a prompt under their user ID.
+     * @deny (update) User with ID 'user123' tries to update a prompt under a different user ID ('user456').
+     * @allow (delete) User with ID 'user123' deletes a prompt under their user ID.
+     * @deny (delete) User with ID 'user123' tries to delete a prompt under a different user ID ('user456').
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/prompts/{promptId} {
+      // Helpers
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      // Permissions
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+
+    /**
+     * @description Manages commands generated in response to a user's prompt. Continues the hierarchical path structure.
+     * @path /users/{userId}/prompts/{promptId}/commands/{commandId}
+     * @allow (create) User with ID 'user123' creates a command under their prompt and user ID.
+     * @deny (create) User with ID 'user123' tries to create a command under a different user ID ('user456').
+     * @allow (get) User with ID 'user123' reads a command under their prompt and user ID.
+     * @deny (get) User with ID 'user123' tries to read a command under a different user ID ('user456').
+     * @allow (update) User with ID 'user123' updates a command under their prompt and user ID.
+     * @deny (update) User with ID 'user123' tries to update a command under a different user ID ('user456').
+     * @allow (delete) User with ID 'user123' deletes a command under their prompt and user ID.
+     * @deny (delete) User with ID 'user123' tries to delete a command under a different user ID ('user456').
+     * @principle Enforces document ownership for writes and restricts access to a user's own data tree.
+     */
+    match /users/{userId}/prompts/{promptId}/commands/{commandId} {
+      // Helpers
+      function isOwner(userId) {
+        return request.auth.uid == userId;
+      }
+
+      function isExistingOwner(userId) {
+        return isOwner(userId) && resource != null;
+      }
+
+      // Permissions
+      allow get: if isOwner(userId);
+      allow list: if isOwner(userId);
+      allow create: if isOwner(userId);
+      allow update: if isExistingOwner(userId);
+      allow delete: if isExistingOwner(userId);
+    }
+  }
+}
