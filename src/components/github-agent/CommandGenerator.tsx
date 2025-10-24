@@ -11,6 +11,9 @@ import { Card, CardContent } from '../ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '../ui/checkbox';
 import { Label } from '../ui/label';
+import { useUser } from '@/firebase';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { cn } from '@/lib/utils';
 
 const initialState: FormState = {
   data: null,
@@ -42,6 +45,7 @@ export function CommandGenerator() {
   const { toast } = useToast();
   const formRef = useRef<HTMLFormElement>(null);
   const { pending } = useFormStatus();
+  const { user, isUserLoading } = useUser();
 
   useEffect(() => {
     if (state.error) {
@@ -59,6 +63,8 @@ export function CommandGenerator() {
     }
   }, [state.success]);
 
+  const isExecuteDisabled = !user;
+
 
   return (
     <div className="space-y-6">
@@ -71,13 +77,26 @@ export function CommandGenerator() {
                 placeholder="e.g., stage all changes and commit with message 'feat: new feature'"
                 className="flex-grow"
                 required
-                disabled={pending}
+                disabled={pending || isUserLoading}
               />
               <SubmitButton />
             </div>
             <div className="flex items-center space-x-2">
-              <Checkbox id="execute" name="execute" disabled={pending} />
-              <Label htmlFor="execute" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+              <TooltipProvider>
+                <Tooltip delayDuration={0}>
+                  <TooltipTrigger asChild>
+                    <div className="flex items-center">
+                      <Checkbox id="execute" name="execute" disabled={isExecuteDisabled || pending || isUserLoading} />
+                    </div>
+                  </TooltipTrigger>
+                  {isExecuteDisabled && (
+                    <TooltipContent>
+                      <p>Please log in to execute commands.</p>
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              </TooltipProvider>
+              <Label htmlFor="execute" className={cn("text-sm font-medium leading-none", (isExecuteDisabled || pending || isUserLoading) ? "cursor-not-allowed opacity-70" : "")}>
                 Execute commands after generating
               </Label>
             </div>
