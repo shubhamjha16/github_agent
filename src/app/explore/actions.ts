@@ -1,6 +1,6 @@
 'use server';
 
-import { listRepoFiles, explainRepoFile, ExplainRepoFileOutput } from '@/ai/flows/explore-repo';
+import { listRepoFiles, explainRepoFile, type ExplainRepoFileOutput } from '@/ai/flows/explore-repo';
 import { z } from 'zod';
 
 const listFilesSchema = z.object({
@@ -25,10 +25,18 @@ export async function handleRepoUrlSubmission(
   prevState: RepoExplorerState,
   formData: FormData
 ): Promise<RepoExplorerState> {
-  
+
   const validatedFields = listFilesSchema.safeParse({
     repoUrl: formData.get('repoUrl'),
   });
+
+  const initialState: RepoExplorerState = {
+      step: 'initial',
+      repoUrl: null,
+      files: null,
+      explanationResult: null,
+      error: null,
+  };
 
   if (!validatedFields.success) {
     return {
@@ -63,7 +71,7 @@ export async function handleFileSelectionSubmission(
       repoUrl: formData.get('repoUrl'),
       filePath: formData.get('filePath'),
     });
-  
+
     if (!validatedFields.success) {
       return {
         ...prevState, // Keep previous state like file list
@@ -72,7 +80,7 @@ export async function handleFileSelectionSubmission(
         error: validatedFields.error.errors.map((e) => e.message).join(', '),
       };
     }
-  
+
     try {
       const result = await explainRepoFile(validatedFields.data);
       return {
@@ -91,11 +99,3 @@ export async function handleFileSelectionSubmission(
       };
     }
   }
-
-export const initialState: RepoExplorerState = {
-    step: 'initial',
-    repoUrl: null,
-    files: null,
-    explanationResult: null,
-    error: null,
-};

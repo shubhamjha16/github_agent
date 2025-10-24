@@ -9,11 +9,18 @@ import { Label } from '@/components/ui/label';
 import Link from 'next/link';
 import { useUser } from '@/firebase';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { handleRepoUrlSubmission, handleFileSelectionSubmission, initialState, type RepoExplorerState } from './actions';
+import { handleRepoUrlSubmission, handleFileSelectionSubmission, type RepoExplorerState } from './actions';
 import { Skeleton } from '@/components/ui/skeleton';
 import { AuthWidget } from '@/components/github-agent/AuthWidget';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
+const initialState: RepoExplorerState = {
+    step: 'initial',
+    repoUrl: null,
+    files: null,
+    explanationResult: null,
+    error: null,
+};
 
 function SubmitButton({ children }: { children: React.ReactNode }) {
     const { pending } = useFormStatus();
@@ -79,7 +86,7 @@ function ExplanationResult({ data }: { data: RepoExplorerState['explanationResul
                 <CardContent>
                      <div
                         className="prose prose-sm dark:prose-invert max-w-none"
-                        dangerouslySetInnerHTML={{ __html: data.explanation.replace(/\n/g, '<br />') }}
+                        dangerouslySetInnerHTML={{ __html: data.explanation.replace(/\\n/g, '<br />') }}
                     />
                 </CardContent>
             </Card>
