@@ -1,101 +1,103 @@
 'use server';
 
 /**
- * @fileOverview This file defines a Genkit flow to explain code from a GitHub repository.
+ * @fileOverview This file defines a Genkit flow to analyze and explain a web page from a URL.
  *
- * - explainCode - A function that fetches a file from a GitHub repo and explains it.
- * - ExplainCodeInput - The input type for the explainCode function.
- * - ExplainCodeOutput - The return type for the explainCode function.
+ * - explainWebPage - A function that fetches content from a URL and explains it.
+ * - ExplainWebPageInput - The input type for the explainWebPage function.
+ * - ExplainWebPageOutput - The return type for the explainWebPage function.
  */
 
 import { ai } from '@/ai/genkit';
 import { z } from 'genkit';
 
-const ExplainCodeInputSchema = z.object({
-  repoUrl: z.string().url().describe('The URL of the GitHub repository.'),
-  filePath: z.string().describe('The path to the file within the repository.'),
+const ExplainWebPageInputSchema = z.object({
+  url: z.string().url().describe('The URL of the web page to analyze.'),
 });
-export type ExplainCodeInput = z.infer<typeof ExplainCodeInputSchema>;
+export type ExplainWebPageInput = z.infer<typeof ExplainWebPageInputSchema>;
 
-const ExplainCodeOutputSchema = z.object({
-  filePath: z.string().describe('The path of the file that was analyzed.'),
-  content: z.string().describe('The content of the file.'),
-  explanation: z.string().describe('A detailed explanation of the code.'),
+const ExplainWebPageOutputSchema = z.object({
+  url: z.string().describe('The URL of the page that was analyzed.'),
+  content: z.string().describe('The source code of the page.'),
+  summary: z.string().describe('A high-level summary of what the web page is and does.'),
+  explanation: z.string().describe('A detailed explanation of the source code.'),
 });
-export type ExplainCodeOutput = z.infer<typeof ExplainCodeOutputSchema>;
+export type ExplainWebPageOutput = z.infer<typeof ExplainWebPageOutputSchema>;
 
 
-const getRepoFileContent = ai.defineTool(
+const getPageContent = ai.defineTool(
     {
-      name: 'getRepoFileContent',
-      description: 'Fetches the content of a file from a given GitHub repository URL.',
-      inputSchema: ExplainCodeInputSchema,
+      name: 'getPageContent',
+      description: 'Fetches the source code of a given web page URL.',
+      inputSchema: ExplainWebPageInputSchema,
       outputSchema: z.object({
-        filePath: z.string(),
+        url: z.string(),
         content: z.string(),
       }),
     },
-    async ({ repoUrl, filePath }) => {
-      console.log(`Simulating fetching content for ${filePath} from ${repoUrl}`);
-      // In a real application, you would use the GitHub API to fetch the file content.
-      // This requires handling authentication (OAuth) and making an HTTP request.
-      // For this demo, we'll return a simulated file content.
-
-      const isTsx = filePath.endsWith('.tsx');
+    async ({ url }) => {
+      console.log(`Simulating fetching content for ${url}`);
+      // In a real application, you would use a library like 'axios' or 'node-fetch'
+      // to make an HTTP request and get the page's HTML.
       const simulatedContent = `
-  // Path: ${filePath}
-  // This is a simulated file content. In a real app, this would be the actual code.
-  
-  function ${isTsx ? 'HelloComponent' : 'helloFunction'}() {
-    const message = "Hello, World!";
-    console.log(message);
-    ${isTsx ? 'return <div>{message}</div>;' : ''}
-  }
-  
-  export default ${isTsx ? 'HelloComponent' : 'helloFunction'};
+  <!DOCTYPE html>
+  <html>
+  <head>
+    <title>Simulated Page</title>
+  </head>
+  <body>
+    <h1>Welcome!</h1>
+    <p>This is a simulated page for URL: ${url}</p>
+    <script>
+      // Simple script to log a message
+      console.log("Hello from simulated page!");
+    </script>
+  </body>
+  </html>
   `;
       return {
-        filePath,
+        url,
         content: simulatedContent.trim(),
       };
     }
   );
   
 
-const explainCodePrompt = ai.definePrompt({
-  name: 'explainCodePrompt',
-  input: { schema: ExplainCodeOutputSchema },
-  output: { schema: ExplainCodeOutputSchema },
-  prompt: `You are an expert code reviewer. You can explain complex code in a clear and concise way.
-The user has provided a file from a GitHub repository.
-Explain the following code file. Provide a detailed, markdown-formatted explanation covering its purpose, structure, and key logic.
+const explainWebPagePrompt = ai.definePrompt({
+  name: 'explainWebPagePrompt',
+  input: { schema: z.object({ url: z.string(), content: z.string() }) },
+  output: { schema: ExplainWebPageOutputSchema },
+  prompt: `You are an expert web developer and code analyst. You can explain complex web pages and their code in a clear and concise way.
+The user has provided a URL.
+First, provide a high-level summary of what the page is and its purpose.
+Second, provide a detailed, markdown-formatted explanation of its source code, covering its structure and key logic.
 
-File Path: {{{filePath}}}
+URL: {{{url}}}
 Content:
-\`\`\`
+\`\`\`html
 {{{content}}}
 \`\`\`
 `,
 });
 
-const explainCodeFlow = ai.defineFlow(
+const explainWebPageFlow = ai.defineFlow(
   {
-    name: 'explainCodeFlow',
-    inputSchema: ExplainCodeInputSchema,
-    outputSchema: ExplainCodeOutputSchema,
+    name: 'explainWebPageFlow',
+    inputSchema: ExplainWebPageInputSchema,
+    outputSchema: ExplainWebPageOutputSchema,
   },
   async (input) => {
-    // Step 1: Use the tool to get the file content
-    const fileContent = await getRepoFileContent(input);
+    // Step 1: Use the tool to get the page content
+    const pageContent = await getPageContent(input);
 
-    // Step 2: Call the prompt to get the explanation
-    const { output } = await explainCodePrompt(fileContent);
+    // Step 2: Call the prompt to get the summary and explanation
+    const { output } = await explainWebPagePrompt(pageContent);
     return output!;
   }
 );
 
-export async function explainCode(
-    input: ExplainCodeInput
-  ): Promise<ExplainCodeOutput> {
-    return explainCodeFlow(input);
+export async function explainWebPage(
+    input: ExplainWebPageInput
+  ): Promise<ExplainWebPageOutput> {
+    return explainWebPageFlow(input);
 }

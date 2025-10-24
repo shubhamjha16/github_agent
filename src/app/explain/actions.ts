@@ -1,15 +1,14 @@
 'use server';
 
-import { explainCode, ExplainCodeOutput } from '@/ai/flows/explain-code';
+import { explainWebPage, ExplainWebPageOutput } from '@/ai/flows/explain-code';
 import { z } from 'zod';
 
 const explainSchema = z.object({
-    repoUrl: z.string().url({ message: 'Please enter a valid repository URL.' }),
-    filePath: z.string().min(1, { message: 'File path cannot be empty.' }),
+    url: z.string().url({ message: 'Please enter a valid URL.' }),
 });
 
 export type ExplainFormState = {
-  data: ExplainCodeOutput | null;
+  data: ExplainWebPageOutput | null;
   error: string | null;
   success: boolean;
 };
@@ -20,8 +19,7 @@ export async function handleExplainSubmission(
 ): Promise<ExplainFormState> {
   
   const validatedFields = explainSchema.safeParse({
-    repoUrl: formData.get('repoUrl'),
-    filePath: formData.get('filePath'),
+    url: formData.get('url'),
   });
 
   if (!validatedFields.success) {
@@ -33,7 +31,7 @@ export async function handleExplainSubmission(
   }
 
   try {
-    const result = await explainCode(validatedFields.data);
+    const result = await explainWebPage(validatedFields.data);
     return { data: result, error: null, success: true };
   } catch (e: any) {
     console.error(e);
