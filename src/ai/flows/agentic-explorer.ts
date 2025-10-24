@@ -58,7 +58,7 @@ export const exploreAndExplainRepo = ai.defineFlow(
       tools: [listRepoFiles, getFileContent],
       
       // Use a more capable model for agentic reasoning
-      model: 'googleai/gemini-1.5-flash',
+      model: 'googleai/gemini-1.5-flash-latest',
     });
 
     return llmResponse.output()!;
